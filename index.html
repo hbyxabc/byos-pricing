@@ -450,9 +450,11 @@
     padding-right: max(16px, env(safe-area-inset-right));
     padding-bottom: max(48px, env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
-    overflow-x: clip;
+    overflow-x: hidden;
   }
-  .wrap { width: 100%; max-width: 1180px; overflow-x: clip; }
+  .wrap { width: 100%; max-width: 1180px; overflow-x: hidden; }
+  .presets, .panel, .main-grid, header.hero { max-width: 100%; min-width: 0; }
+  .preset-btn, .rap-btn { max-width: 100%; box-sizing: border-box; }
 
   /* 情景：可横向滑 + wrap */
   .preset-row {
@@ -471,14 +473,24 @@
   }
   @media (max-width: 640px) {
     .preset-scroll {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: thin;
+      flex-wrap: wrap;
+      overflow-x: visible;
+      padding-bottom: 0;
     }
     .preset-scroll .preset-btn,
     .preset-scroll .rap-btn {
-      flex: 0 0 auto;
+      flex: 1 1 auto;
+    }
+    #rapRow.preset-scroll,
+    .rap-row.preset-scroll {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    #rapRow .rap-btn {
+      width: 100%;
+      min-width: 0;
+      white-space: normal;
     }
   }
   .preset-btn, .tool-btn, .rap-btn, .sens-tabs button {
@@ -616,28 +628,91 @@
     }
   }
   @media (max-width: 640px) {
-    body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
-    .panel { padding: 14px 14px; }
+    body {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+    .panel { padding: 14px; }
     header.hero { padding: 16px; }
     .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* 取消 sticky，避免占半屏、挡 KPI、套娃滚动 */
     #paramsPanel.sticky-params {
-      position: sticky;
-      bottom: 0;
-      z-index: 20;
-      margin-bottom: 0;
-      border-radius: var(--radius) var(--radius) 0 0;
-      box-shadow: 0 -4px 24px rgba(15,23,42,.12);
-      max-height: 42vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: max(14px, env(safe-area-inset-bottom));
+      position: static;
+      max-height: none;
+      overflow: visible;
+      margin-bottom: 16px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: auto;
+      padding-bottom: 14px;
     }
     .presets {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      border-radius: 0 0 var(--radius) var(--radius);
+      position: static;
+      z-index: auto;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
+    .presets h2 { margin-bottom: 8px; }
+    .rap-note {
+      font-size: 0.7rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    details.rap-note-more {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    details.rap-note-more summary {
+      cursor: pointer;
+      color: var(--accent);
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+    }
+    .ctrl {
+      grid-template-columns: 1fr 92px;
+      gap: 6px 8px;
+    }
+    .ctrl label {
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .tool-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+    .tool-actions .tool-btn { width: 100%; }
+    .sens-table-wrap {
+      margin: 0 -4px;
+      padding-bottom: 8px;
+    }
+    table.sens-table { min-width: 480px; font-size: 0.75rem; }
+    .verdict-text { min-width: 0; font-size: 0.85rem; }
+    .bar-row { grid-template-columns: 48px 1fr 64px; }
+  }
+
+
+  @media (min-width: 641px) {
+    details.rap-note-more { margin-top: 8px; }
+    details.rap-note-more > summary { display: none; }
+    details.rap-note-more[open], details.rap-note-more {
+      display: block;
+    }
+    details.rap-note-more .rap-note {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+  }
+  @media (max-width: 640px) {
+    /* 默认收起长说明，避免占屏 */
   }
 
   /* 深色模式 */
@@ -740,7 +815,10 @@
   <div class="preset-row preset-scroll rap-row" id="rapRow">
     <!-- filled by JS -->
   </div>
-  <p class="rap-note">数据为订阅额度换算的<strong>官方 list 货值</strong>（非中转零售价）。负载约定约 <strong>97% cache / 2.5% input / 0.5% output</strong>；V_list ≈ monthly_yi（亿 token）× list_blended（$/MTok）。若真实外售缓存率远低于 97%，V_list 会<strong>高估</strong>。数字取整数美元。按钮写入 C_sub 与 V_list，其余参数保留当前（或可先点「重置默认」回主情景人数）。主情景下需求常封顶：实际 R/GMV 可能不随 V_list 上升，但满销 R_full 会放大；点「少卖家饥饿」或提高 Nb/Ns 可见实际 R 随更大 V 变大。</p>
+  <details class="rap-note-more" id="rapNoteDetails" open>
+  <summary>RAP 说明（点开查看）</summary>
+  <p class="rap-note" style="display:block;-webkit-line-clamp:unset;overflow:visible;margin-top:6px">数据为订阅额度换算的<strong>官方 list 货值</strong>（非中转零售价）。负载约定约 <strong>97% cache / 2.5% input / 0.5% output</strong>；V_list ≈ monthly_yi（亿 token）× list_blended（$/MTok）。若真实外售缓存率远低于 97%，V_list 会<strong>高估</strong>。数字取整数美元。按钮写入 C_sub 与 V_list，其余参数保留当前（或可先点「重置默认」回主情景人数）。主情景下需求常封顶：实际 R/GMV 可能不随 V_list 上升，但满销 R_full 会放大；点「少卖家饥饿」或提高 Nb/Ns 可见实际 R 随更大 V 变大。</p>
+</details>
   <div class="preset-row" style="margin-top:10px">
     <div class="tool-actions" style="margin-left:0">
       <button type="button" class="tool-btn" id="btnReset">重置默认</button>
@@ -1598,6 +1676,17 @@ GMV                 = cleared_list × p
   render();
   if (!fromHash) writeHash();
 })();
+
+  (function () {
+    var d = document.getElementById("rapNoteDetails");
+    if (!d) return;
+    function sync() {
+      if (window.matchMedia("(max-width: 640px)").matches) d.open = false;
+      else d.open = true;
+    }
+    sync();
+    window.addEventListener("resize", sync);
+  })();
 </script>
 </body>
 </html>
