@@ -388,7 +388,7 @@
   <header class="card hero">
     <h1>BYOS 定价与收益测算</h1>
     <p class="tagline">卖家贡献订阅额度，买家按官方标价的折扣价买 API，平台抽成。本页用「官方标价货值」记账，看三方各自赚多少。</p>
-    <p class="caveat">提醒：买家愿付预算、愿用货值上限等是<strong>建模假设</strong>，不是市场调研数据。改参数只改模型推演，不代表真实转化。</p>
+    <p class="caveat">提醒：买家愿付预算等是<strong>建模假设</strong>，不是市场调研数据。改参数只改模型推演，不代表真实转化。</p>
   </header>
 
   <!-- B. 一眼结论 -->
@@ -478,20 +478,10 @@
 
         <div class="ctrl" data-key="V_list">
           <label>官方标价月货值（美元）</label>
-          <span class="hint">打满订阅后，按官方 API 标价大约能值多少钱。可从下方参考表一键填入</span>
+          <span class="hint">按可兑现的满载官方标价货值理解（不再另乘打满程度）。可从下方参考表一键填入</span>
           <div class="ctrl-row">
             <input type="range" min="500" max="20000" step="100" />
             <input type="number" min="100" max="100000" step="100" />
-          </div>
-        </div>
-
-        <div class="ctrl" data-key="u">
-          <label>打满程度</label>
-          <span class="hint">实际能用到订阅额度的比例（100% = 完全打满）</span>
-          <div class="ctrl-row">
-            <input type="range" min="0.1" max="1" step="0.05" />
-            <input type="number" min="0.05" max="1" step="0.05" />
-            <span class="zhe-live" id="uPct">—</span>
           </div>
         </div>
 
@@ -527,14 +517,6 @@
           </div>
         </div>
 
-        <div class="ctrl" data-key="Mb">
-          <label>每人每月愿用货值上限（美元） <span class="assume">假设</span></label>
-          <span class="hint">按官方标价计的用量天花板；再便宜也不会无限用。建模假设，非调研</span>
-          <div class="ctrl-row">
-            <input type="range" min="20" max="2000" step="20" />
-            <input type="number" min="10" max="50000" step="10" />
-          </div>
-        </div>
       </div>
 
       <div class="role plat">
@@ -638,9 +620,9 @@
     <summary>怎么算的</summary>
     <div class="body">
       <ol class="steps">
-        <li><strong>单卖家可售货值</strong> = 官方标价月货值 × 打满程度 × 愿意外售的比例。</li>
+        <li><strong>单卖家可售货值</strong> = 官方标价月货值 × 愿意外售的比例。</li>
         <li><strong>供给总量</strong> = 卖家人数 × 单卖家可售货值。</li>
-        <li><strong>单买家需求货值</strong> = 取较小值（愿用货值上限， 愿付预算 ÷ 相对官方售价倍率）。预算不够就买少一点；愿用封顶就不再多买。</li>
+        <li><strong>单买家需求货值</strong> = 愿付预算 ÷ 相对官方售价倍率。</li>
         <li><strong>需求总量</strong> = 买家人数 × 单买家需求货值。</li>
         <li><strong>成交货值</strong> = 取较小值（供给总量， 需求总量）。</li>
         <li><strong>成交额</strong> = 成交货值 × 相对官方售价倍率（买家真正付出去的总钱）。</li>
@@ -655,7 +637,7 @@
     </div>
   </details>
 
-  <p class="foot">BYOS 定价与收益测算 · 单文件离线 · 逻辑对齐 byos_pricing_model.py · 2026-09-26</p>
+  <p class="foot">BYOS 定价与收益测算 · 单文件离线 · 逻辑对齐 byos_pricing_model.py · 2026-09-27</p>
 </div>
 
 <script>
@@ -664,28 +646,26 @@
 
   var DEFAULTS = {
     V_list: 6000,
-    u: 0.75,
     a: 0.50,
     p: 0.25,
     t: 0.08,
     Ns: 50,
     Nb: 500,
     B: 50,
-    Mb: 200,
     C_sub: 200
   };
 
-  var PARAM_KEYS = ["V_list", "u", "a", "p", "t", "Ns", "Nb", "B", "Mb", "C_sub"];
-  var INT_KEYS = { Ns: 1, Nb: 1, V_list: 1, B: 1, Mb: 1, C_sub: 1 };
+  var PARAM_KEYS = ["V_list", "a", "p", "t", "Ns", "Nb", "B", "C_sub"];
+  var INT_KEYS = { Ns: 1, Nb: 1, V_list: 1, B: 1, C_sub: 1 };
 
   var state = Object.assign({}, DEFAULTS);
   var syncing = false;
 
   function compute(pr) {
     var price = Math.max(pr.p, 1e-9);
-    var sellable = pr.V_list * pr.u * pr.a;
+    var sellable = pr.V_list * pr.a;
     var supply = pr.Ns * sellable;
-    var demPer = Math.min(pr.Mb, pr.B / price);
+    var demPer = pr.B / price;
     var demand = pr.Nb * demPer;
     var cleared = Math.min(supply, demand);
     var util = supply > 0 ? cleared / supply : 0;
@@ -796,7 +776,6 @@
     document.getElementById("readout").textContent = buildReadout(state, m);
 
     document.getElementById("pZhe").textContent = zheLabel(state.p);
-    document.getElementById("uPct").textContent = pctLabel(state.u);
     document.getElementById("aPct").textContent = pctLabel(state.a);
     document.getElementById("tPct").textContent = pctLabel(state.t);
   }
@@ -868,8 +847,8 @@
       "成交额 " + fmt$(m.gmv) + " · 平台 " + fmt$(m.platform) + " · 买家人均 " + fmt$(m.buyerPay),
       "供给利用率 " + fmtPct(m.util) + " · 需求满足率 " + fmtPct(m.fill) + " · " + m.bottleneck,
       "参数：卖家 " + state.Ns + " 人 / 订阅 $" + state.C_sub + " / 官方标价货值 $" + state.V_list +
-        " / 打满 " + pctLabel(state.u) + " / 外售 " + pctLabel(state.a) +
-        "；买家 " + state.Nb + " 人 / 愿付 $" + state.B + " / 愿用上限 $" + state.Mb +
+        " / 外售 " + pctLabel(state.a) +
+        "；买家 " + state.Nb + " 人 / 愿付 $" + state.B +
         "；售价 " + zheLabel(state.p) + " / 抽成 " + pctLabel(state.t)
     ].join("\n");
 
