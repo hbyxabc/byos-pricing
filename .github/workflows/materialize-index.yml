@@ -11,7 +11,7 @@ jobs:
       - name: Decode zlib b64 to index.html
         run: |
           set -euo pipefail
-          python3 -c 'import base64,zlib,pathlib,hashlib; c=pathlib.Path("zlib.part0").read_text().strip(); b=zlib.decompress(base64.b64decode(c)); pathlib.Path("index.html").write_bytes(b); print("size",len(b)); print("sha256",hashlib.sha256(b).hexdigest()); assert len(b)==30165; assert hashlib.sha256(b).hexdigest()=="004f389d45afd23e04d4290a780e2bddcdaac83293725fd7ef3d6263df6caaed"'
+          python3 -c 'import base64,zlib,pathlib,hashlib; c="".join(pathlib.Path(f"zlib.part{i}").read_text().strip() for i in range(3)); b=zlib.decompress(base64.b64decode(c))[1:]; pathlib.Path("index.html").write_bytes(b); print("size",len(b)); print("sha256",hashlib.sha256(b).hexdigest()); assert len(b)==30165; assert hashlib.sha256(b).hexdigest()=="004f389d45afd23e04d4290a780e2bddcdaac83293725fd7ef3d6263df6caaed"'
       - name: Commit index.html
         run: |
           git config user.name "github-actions[bot]"
