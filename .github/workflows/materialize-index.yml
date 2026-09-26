@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble and decode
+      - name: Decode zlib b64 to index.html
         run: |
           set -euo pipefail
-          python3 -c 'from pathlib import Path; p=sorted(Path(".").glob("data.b64.part*")); Path("/tmp/all.b64").write_text("".join(x.read_text() for x in p)); import base64; Path("index.html").write_bytes(base64.b64decode(Path("/tmp/all.b64").read_text())); b=Path("index.html").read_bytes(); import hashlib; print("size",len(b)); print("sha256",hashlib.sha256(b).hexdigest()); assert len(b)==56423'
+          python3 -c 'import base64,zlib,pathlib,hashlib; c="".join(pathlib.Path(f"zlib.part{i}").read_text() for i in range(3)); b=zlib.decompress(base64.b64decode(c)); pathlib.Path("index.html").write_bytes(b); print("size",len(b)); print("sha256",hashlib.sha256(b).hexdigest()); assert len(b)==56423'
       - name: Commit index.html
         run: |
           git config user.name "github-actions[bot]"
